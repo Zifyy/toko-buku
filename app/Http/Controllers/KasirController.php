@@ -4,20 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Buku;
-use App\Models\Kategori;
-use Illuminate\Support\Facades\Session;
+use App\Models\DetailBuku;
+use App\Models\Transaksi;
+use App\Models\TransaksiDetail;
+use Illuminate\Support\Facades\DB;
 
 class KasirController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth');
-        // jika sudah pakai RoleMiddleware pada routes, ini optional:
-        // $this->middleware('role:kasir');
     }
 
     /**
-     * Tampilkan dashboard kasir (daftar buku).
+     * 🏠 Dashboard Kasir - Menampilkan daftar buku
      */
     public function index(Request $request)
     {
@@ -25,23 +25,21 @@ class KasirController extends Controller
 
         $buku = Buku::with(['kategori', 'detailBuku'])
             ->when($search, function ($query, $search) {
-                return $query->where('judul', 'like', "%{$search}%")
-                             ->orWhere('kode_buku', 'like', "%{$search}%")
-                             ->orWhere('pengarang', 'like', "%{$search}%")
-                             ->orWhereHas('kategori', function ($q) use ($search) {
-                                 $q->where('nama_kategori', 'like', "%{$search}%")
-                                   ->orWhere('genre', 'like', "%{$search}%")
-                                   ->orWhere('jenis', 'like', "%{$search}%");
-                             });
+                $query->where('judul', 'like', "%{$search}%")
+                    ->orWhere('kode_buku', 'like', "%{$search}%")
+                    ->orWhere('pengarang', 'like', "%{$search}%")
+                    ->orWhereHas('kategori', function ($q) use ($search) {
+                        $q->where('nama_kategori', 'like', "%{$search}%");
+                    });
             })
             ->orderBy('judul')
-            ->paginate(12); // paginate supaya tabel/card tidak memuat terlalu banyak
+            ->paginate(12);
 
         return view('kasir.dashboard', compact('buku', 'search'));
     }
 
     /**
-     * Terima cart JSON dari client, simpan ke session lalu redirect ke halaman transaksi.
+     * 🛒 Simpan data cart ke session
      */
     public function storeTransaction(Request $request)
     {
@@ -51,66 +49,101 @@ class KasirController extends Controller
 
         $cart = json_decode($data['cart_data'], true);
 
-        if (!is_array($cart)) {
-            return redirect()->back()->with('error', 'Data keranjang tidak valid.');
+        if (!is_array($cart) || empty($cart)) {
+            return back()->with('error', 'Data keranjang tidak valid atau kosong.');
         }
 
-        // Hitung total (basic)
         $total = 0;
-        foreach ($cart as $id => $item) {
-            $price = isset($item['price']) ? floatval($item['price']) : 0;
-            $qty = isset($item['quantity']) ? intval($item['quantity']) : 0;
-            $total += ($price * $qty);
+        foreach ($cart as $item) {
+            if (!isset($item['price'], $item['quantity'])) continue;
+            $total += $item['price'] * $item['quantity'];
         }
 
         session(['cart' => $cart, 'cart_total' => $total]);
 
-        return redirect()->route('kasir.transaksi')->with('success', 'Keranjang berhasil disimpan. Silakan konfirmasi transaksi.');
+        return redirect()->route('kasir.transaksi')->with('success', 'Keranjang berhasil disimpan.');
     }
 
     /**
-     * Tampilkan halaman konfirmasi transaksi.
+     * 💳 Halaman checkout
      */
-    public function transaksi(Request $request)
-    {
-        // Ambil data keranjang dari POST
-        $cart = json_decode($request->cart_data, true);
-
-        // Kirim ke view checkout
-        return view('kasir.transaksi', compact('cart'));
-    }
-
-    /**
-     * Finalize transaksi (saat ini: dummy -> hapus session, beri pesan sukses).
-     * Nanti di sini masukkan logic menyimpan ke DB (transaksi + detail_transaksi).
-     */
-    public function finalizeTransaction(Request $request)
+    public function showTransaksi()
     {
         $cart = session('cart', []);
         $total = session('cart_total', 0);
 
-        if (empty($cart)) {
-            return redirect()->route('kasir.dashboard')->with('error', 'Keranjang kosong.');
-        }
-
-        // TODO: Simpan transaksi ke DB (transaksi + detail).
-        // Untuk saat ini kita hanya hapus session (simulasi sukses)
-        session()->forget(['cart', 'cart_total']);
-
-        return redirect()->route('kasir.dashboard')->with('success', 'Transaksi berhasil (simpanan dummy).');
+        return view('kasir.transaksi', compact('cart', 'total'));
     }
 
     /**
-     * Tampilkan halaman konfirmasi transaksi (versi show).
+     * 💾 Simpan transaksi ke database
      */
-    public function showTransaksi(Request $request)
+    public function finalize(Request $request)
     {
-        // Ambil data keranjang dari session, localStorage, atau set kosong
-        $cart = []; // default kosong
+        $cart = json_decode($request->input('cart_data'), true);
 
-        // Jika pakai session:
-        // $cart = session('cart', []);
+        if (!$cart || count($cart) === 0) {
+            return redirect()->route('kasir.transaksi')->with('error', 'Keranjang kosong!');
+        }
 
-        return view('kasir.transaksi', compact('cart'));
+        DB::beginTransaction();
+
+        try {
+            $total = 0;
+            foreach ($cart as $item) {
+                $total += $item['price'] * $item['quantity'];
+            }
+
+            $transaksi = Transaksi::create([
+                'kasir_id' => auth()->id(),
+                'tanggal_transaksi' => now(),
+                'total' => $total,
+            ]);
+
+            foreach ($cart as $item) {
+                $buku = Buku::find($item['id']);
+                $detail = DetailBuku::where('buku_id', $item['id'])->first();
+
+                if (!$buku) {
+                    DB::rollBack();
+                    return redirect()->route('kasir.transaksi')->with('error', 'Data buku tidak ditemukan.');
+                }
+
+                if ($detail->stok < $item['quantity']) {
+                    DB::rollBack();
+                    return redirect()->route('kasir.transaksi')
+                        ->with('error', "Stok buku '{$buku->judul}' tidak cukup.");
+                }
+
+                TransaksiDetail::create([
+                    'transaksi_id' => $transaksi->id,
+                    'buku_id' => $buku->id,
+                    'jumlah' => $item['quantity'],
+                    'harga_satuan' => $item['price'],
+                    'subtotal' => $item['price'] * $item['quantity'],
+                ]);
+
+                $detail->decrement('stok', $item['quantity']);
+            }
+
+            DB::commit();
+            session()->forget(['cart', 'cart_total']);
+
+            return redirect()->route('kasir.transaksi.nota', $transaksi->id)
+                ->with('success', 'Transaksi berhasil disimpan!');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->route('kasir.transaksi')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 🧾 Nota Transaksi
+     */
+    public function nota($id)
+    {
+        $transaksi = Transaksi::with(['kasir', 'detailTransaksi.buku'])->findOrFail($id);
+        return view('kasir.nota', compact('transaksi'));
     }
 }

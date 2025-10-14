@@ -10,12 +10,9 @@ use App\Http\Controllers\BukuController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\DetailBukuController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\RoleMiddleware;
 
-// 🏠 Halaman utama diarahkan ke login
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// 🏠 Redirect ke login
+Route::get('/', fn() => redirect()->route('login'));
 
 // 🔑 AUTH ROUTES
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -23,7 +20,7 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // 🛠️ ADMIN ROUTES (Role: admin)
-Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // CRUD Buku
@@ -49,13 +46,20 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
 
 // 🧾 KASIR ROUTES (Role: kasir)
 Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->group(function () {
-    // Dashboard utama kasir (daftar buku)
     Route::get('/dashboard', [KasirController::class, 'index'])->name('kasir.dashboard');
 
-    // Transaksi
-    Route::post('/transaksi', [KasirController::class, 'transaksi'])->name('kasir.transaksi');
-    Route::post('/transaksi/tambah', [KasirController::class, 'tambah'])->name('kasir.transaksi.tambah');
-    Route::post('/transaksi/hapus/{rowId}', [KasirController::class, 'hapus'])->name('kasir.transaksi.hapus');
-    Route::post('/transaksi/finalize', [KasirController::class, 'finalize'])->name('kasir.transaksi.finalize');
+    // Proses kirim cart ke session
+    Route::post('/transaksi', [KasirController::class, 'storeTransaction'])->name('kasir.transaksi.store');
+
+    // Tampilkan halaman checkout
     Route::get('/transaksi', [KasirController::class, 'showTransaksi'])->name('kasir.transaksi');
+
+    // Simpan ke database (final)
+    Route::post('/transaksi/finalize', [KasirController::class, 'finalize'])->name('kasir.transaksi.finalize');
+
+    // Tampilkan nota
+    Route::get('/transaksi/nota/{id}', [KasirController::class, 'nota'])->name('kasir.transaksi.nota');
+
+    // Riwayat transaksi
+    Route::get('/riwayat', [TransaksiController::class, 'riwayat'])->name('kasir.riwayat');
 });

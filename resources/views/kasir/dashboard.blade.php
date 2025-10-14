@@ -12,11 +12,10 @@
         align-items: stretch;
     }
 
-    /* Card Buku: tinggi seragam dan struktur ketat */
     .book-card {
         display: flex;
         flex-direction: column;
-        height: 428px; /* seragam */
+        height: 428px;
         border-radius: 12px;
         overflow: hidden;
         background: #fff;
@@ -28,17 +27,15 @@
         box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
 
-    /* Cover seragam */
     .book-card img {
         width: 100%;
         height: 180px;
-        object-fit: contain; /* agar gambar tidak terpotong */
+        object-fit: contain;
         background: #f5f6fa;
         border-bottom: 1px solid #eee;
         padding: 10px 0;
     }
 
-    /* Info pakai grid: header (judul), content (meta), footer (harga+button) */
     .book-info {
         display: grid;
         grid-template-rows: auto 1fr auto;
@@ -47,7 +44,6 @@
         flex: 1;
     }
 
-    /* Judul: clamp 2 baris + tinggi minimum supaya tidak mendorong footer */
     .book-title {
         font-weight: 600;
         font-size: 15px;
@@ -58,13 +54,12 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: 40px; /* kira-kira dua baris */
+        min-height: 40px;
     }
 
-    /* Konten meta: dibatasi agar tidak mendorong tombol ke bawah */
     .book-info-content {
         overflow: hidden;
-        max-height: 96px; /* kira-kira 5-6 baris */
+        max-height: 96px;
     }
     .book-meta {
         margin: 0;
@@ -73,7 +68,6 @@
         line-height: 1.4;
     }
 
-    /* Footer seragam: tombol selalu rata bawah */
     .book-bottom {
         display: grid;
         grid-template-rows: auto auto;
@@ -86,14 +80,13 @@
     }
     .add-btn {
         width: 100%;
-        height: 40px; /* seragam */
+        height: 40px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 18px;
     }
 
-    /* Cart bubble menghindari tabrakan */
     .cart-bubble {
         position: fixed;
         bottom: 20px;
@@ -137,7 +130,6 @@
     @keyframes badge-bump { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
     @keyframes badge-glow { 0%{box-shadow:0 0 0 rgba(220,53,69,0)} 50%{box-shadow:0 0 14px rgba(220,53,69,0.7)} 100%{box-shadow:0 0 0 rgba(220,53,69,0)} }
 
-    /* Floating cart panel: body tidak nabrak footer */
     .floating-cart {
         position: fixed;
         top: 0;
@@ -165,7 +157,7 @@
         flex: 1;
         overflow-y: auto;
         padding: 15px;
-        max-height: calc(100vh - 140px); /* header+footer */
+        max-height: calc(100vh - 140px);
     }
     .cart-item {
         display: flex;
@@ -230,19 +222,16 @@
         @endforeach
     </div>
 
-    <!-- Pagination (controller harus paginate(15)) -->
     <div class="mt-4 d-flex justify-content-center">
         {{ $buku->links() }}
     </div>
 </div>
 
-<!-- Floating Cart Bubble -->
 <div id="cartBubble" class="cart-bubble" onclick="toggleCart()" aria-label="Buka keranjang">
     <i class="bi bi-cart-fill"></i>
     <span id="cartCount" class="cart-badge">0</span>
 </div>
 
-<!-- Floating Cart Panel -->
 <div id="floatingCart" class="floating-cart" aria-live="polite">
     <div class="floating-cart-header">
         <h6 class="m-0">🛍️ Keranjang</h6>
@@ -251,7 +240,9 @@
     <div class="floating-cart-body" id="cartItems"></div>
     <div class="cart-footer">
         <h6 class="mb-2">Total: <span id="cartTotal">Rp0</span></h6>
-        <form id="cartForm" action="{{ route('kasir.transaksi') }}" method="POST">
+
+        <!-- ✅ FIXED: arahkan ke route yang benar -->
+        <form id="cartForm" action="{{ route('kasir.transaksi.store') }}" method="POST">
             @csrf
             <input type="hidden" name="cart_data" id="cartDataInput">
             <button type="submit" class="btn btn-success w-100">Konfirmasi Pesanan</button>
@@ -260,7 +251,6 @@
 </div>
 
 <script>
-    // Aktifkan tooltip Bootstrap (pastikan Bootstrap JS sudah ada di layout)
     document.addEventListener('DOMContentLoaded', function () {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
@@ -269,7 +259,6 @@
     let cart = {};
     let cartCount = 0;
 
-    // Restore cart dari localStorage saat halaman dimuat
     document.addEventListener('DOMContentLoaded', function () {
         const savedCart = localStorage.getItem('kasir_cart');
         if (savedCart) {
@@ -277,13 +266,18 @@
             updateCart();
         }
 
-        // Submit form: kirim data cart sebagai JSON
         document.getElementById('cartForm').addEventListener('submit', function(e) {
-            document.getElementById('cartDataInput').value = JSON.stringify(cart);
+            // Ubah object cart menjadi array of object dengan id bertipe integer
+            const cartArr = Object.entries(cart).map(([id, item]) => ({
+                id: parseInt(id), // pastikan integer
+                title: item.title,
+                price: item.price,
+                quantity: item.quantity
+            }));
+            document.getElementById('cartDataInput').value = JSON.stringify(cartArr);
         });
     });
 
-    // Simpan cart ke localStorage setiap kali update
     function updateCart() {
         const cartContainer = document.getElementById('cartItems');
         const cartCountEl = document.getElementById('cartCount');
@@ -317,10 +311,7 @@
         cartCountEl.innerText = cartCount;
         cartCountEl.classList.toggle('show', cartCount > 0);
 
-        // Update hidden input di form konfirmasi
         document.getElementById('cartDataInput').value = JSON.stringify(cart);
-
-        // Simpan ke localStorage
         localStorage.setItem('kasir_cart', JSON.stringify(cart));
     }
 
@@ -328,17 +319,17 @@
         const panel = document.getElementById('floatingCart');
         const bubble = document.getElementById('cartBubble');
         panel.classList.toggle('open');
-        bubble.classList.toggle('hidden'); // sembunyikan bubble saat panel terbuka agar tidak nabrak footer
+        bubble.classList.toggle('hidden');
     }
 
     function addToCart(id, title, price) {
         if (!cart[id]) {
-            cart[id] = { title, price: Number(price) || 0, quantity: 1 };
-        } else {
-            cart[id].quantity++;
-        }
-        updateCart();
-        animateBadge();
+        cart[id] = { id: id, title: title, price: Number(price) || 0, quantity: 1 };
+    } else {
+        cart[id].quantity++;
+    }
+    updateCart();
+    animateBadge();
     }
 
     function changeQty(id, delta) {
@@ -352,7 +343,7 @@
     function animateBadge() {
         const badge = document.getElementById('cartCount');
         badge.classList.remove('bump');
-        void badge.offsetWidth; // retrigger CSS animation
+        void badge.offsetWidth;
         badge.classList.add('bump');
     }
 </script>

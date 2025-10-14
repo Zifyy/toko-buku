@@ -129,6 +129,7 @@
             color: #fff !important;
             font-weight: 600;
         }
+
         .sidebar .active:hover {
             background: linear-gradient(90deg, #00c6ff, #0077b6);
             color: #fff !important;
@@ -164,11 +165,20 @@
                    data-bs-toggle="tooltip" title="Dashboard">
                     <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
                 </a>
+
                 <a href="{{ route('kasir.transaksi') }}"
                    class="{{ request()->is('kasir/transaksi*') ? 'active' : '' }}"
                    data-bs-toggle="tooltip" title="Transaksi">
                     <i class="bi bi-receipt-cutoff"></i> <span>Transaksi</span>
                 </a>
+
+                <!-- ✅ Tambahan Menu Riwayat Transaksi -->
+                <a href="{{ route('kasir.riwayat') }}"
+                   class="{{ request()->is('kasir/riwayat*') ? 'active' : '' }}"
+                   data-bs-toggle="tooltip" title="Riwayat Transaksi">
+                    <i class="bi bi-clock-history"></i> <span>Riwayat Transaksi</span>
+                </a>
+
                 <form action="/logout" method="POST" class="mt-3 px-2">
                     @csrf
                     <button type="submit" class="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="tooltip" title="Logout">
