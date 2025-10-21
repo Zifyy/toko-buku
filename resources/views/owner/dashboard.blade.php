@@ -1,31 +1,104 @@
-<!DOCTYPE html>
-<html>
+@extends('owner.layout.owner_layout')
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+@section('title', 'Dashboard Owner')
 
-    <title>Dashboard</title>
+@section('content')
+<h1 class="mb-4">Dashboard Owner</h1>
+<p class="mb-4">Halo Pak Dzikri 👋</p>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+<!-- Statistik -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#00c6ff,#0077b6);">
+            <div class="card-body">
+                <i class="bi bi-book" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Buku</h6>
+                <h3 class="fw-bold">{{ $totalBuku }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#6a11cb,#2575fc);">
+            <div class="card-body">
+                <i class="bi bi-tags" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Kategori</h6>
+                <h3 class="fw-bold">{{ $totalKategori }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#f7971e,#ffd200);">
+            <div class="card-body">
+                <i class="bi bi-card-list" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Detail Buku</h6>
+                <h3 class="fw-bold">{{ $totalDetailBuku }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#11998e,#38ef7d);">
+            <div class="card-body">
+                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total User</h6>
+                <h3 class="fw-bold">{{ $totalUser }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-+0n0xVW2eSR5O3z4p6j6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
-        crossorigin="anonymous"></script>
-</head>
+<!-- Statistik Keuangan -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#00b09b,#96c93d);">
+            <div class="card-body">
+                <i class="bi bi-cash-coin" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Pendapatan</h6>
+                <h3 class="fw-bold">Rp{{ number_format($totalPendapatan,0,',','.') }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#fc5c7d,#6a82fb);">
+            <div class="card-body">
+                <i class="bi bi-cart-check" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Transaksi</h6>
+                <h3 class="fw-bold">{{ $totalTransaksi }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 text-center text-white" style="background: linear-gradient(45deg,#f7971e,#ffd200);">
+            <div class="card-body">
+                <i class="bi bi-bookmark-star" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Total Buku Terjual</h6>
+                <h3 class="fw-bold">{{ $totalBukuTerjual }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
 
-<body>
-    <h1>Dashboard Owner</h1>
-    @if (auth()->user('owner'))
-        <p>Halo {{ Auth::user()->name }} Owner!</p>
-    @endif
-
-    <form action="/logout" method="POST">
-    @csrf
-    <button type="submit">logout</button>
-    </form>
-</body>
-
-</html>
+<!-- Buku Terlaris -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Buku Terlaris</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>Judul Buku</th>
+                    <th>Jumlah Terjual</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($bukuTerlaris as $buku)
+                    <tr>
+                        <td>{{ $buku->buku->judul ?? '-' }}</td>
+                        <td>{{ $buku->jumlah_terjual }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection

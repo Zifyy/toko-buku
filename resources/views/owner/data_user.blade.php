@@ -1,11 +1,11 @@
-@extends('admin.layout.admin_layout')
+@extends('owner.layout.owner_layout')
 
 @section('title', 'Kelola User')
 
 @section('content')
     <div class="container-fluid">
         <h1 class="mb-2 text-2xl font-bold text-gray-800">Kelola User</h1>
-        <p class="mb-4 text-gray-600">Atur akun pengguna beserta hak aksesnya 🔑</p>
+        <p class="mb-4 text-gray-600">Atur akun Admin dan Kasir di sistem toko 📋</p>
 
         <!-- Alert Success/Error -->
         @if(session('success'))
@@ -82,8 +82,8 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            {{-- Admin tidak bisa edit owner --}}
-                                            @if($user->role !== 'owner')
+                                            {{-- Hanya bisa edit user yang bukan owner, atau diri sendiri (tapi tidak bisa ubah role) --}}
+                                            @if($user->role !== 'owner' || $user->id === auth()->id())
                                                 <!-- Tombol Edit -->
                                                 <button class="btn btn-warning btn-sm"
                                                         data-bs-toggle="modal"
@@ -92,18 +92,18 @@
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
                                             @else
-                                                <!-- Tidak bisa edit owner -->
+                                                <!-- Tidak bisa edit owner lain -->
                                                 <button class="btn btn-secondary btn-sm" 
                                                         disabled 
-                                                        title="Tidak bisa edit owner">
+                                                        title="Tidak bisa edit owner lain">
                                                     <i class="bi bi-lock"></i>
                                                 </button>
                                             @endif
 
-                                            {{-- Admin tidak bisa hapus diri sendiri dan tidak bisa hapus owner --}}
+                                            {{-- Hanya bisa hapus user yang bukan diri sendiri dan bukan owner lain --}}
                                             @if($user->id !== auth()->id() && $user->role !== 'owner')
                                                 <!-- Tombol Hapus -->
-                                                <form action="{{ route('user.destroy', $user->id) }}" 
+                                                <form action="{{ route('owner.user.destroy', $user->id) }}" 
                                                       method="POST" 
                                                       class="d-inline"
                                                       onsubmit="return confirm('Yakin ingin menghapus user {{ $user->name }}?')">
@@ -118,7 +118,7 @@
                                             @else
                                                 <button class="btn btn-secondary btn-sm" 
                                                         disabled 
-                                                        title="{{ $user->id === auth()->id() ? 'Tidak bisa hapus akun sendiri' : 'Tidak bisa hapus owner' }}">
+                                                        title="{{ $user->id === auth()->id() ? 'Tidak bisa hapus akun sendiri' : 'Tidak bisa hapus owner lain' }}">
                                                     <i class="bi bi-lock"></i>
                                                 </button>
                                             @endif
@@ -126,8 +126,8 @@
                                     </td>
                                 </tr>
 
-                                <!-- Modal Edit User (Hanya untuk non-owner) -->
-                                @if($user->role !== 'owner')
+                                <!-- Modal Edit User -->
+                                @if($user->role !== 'owner' || $user->id === auth()->id())
                                     <div class="modal fade" id="editUserModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
@@ -138,7 +138,7 @@
                                                     </h5>
                                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
-                                                <form action="{{ route('user.update', $user->id) }}" method="POST">
+                                                <form action="{{ route('owner.user.update', $user->id) }}" method="POST">
                                                     @csrf
                                                     @method('PUT')
                                                     <div class="modal-body">
@@ -176,19 +176,16 @@
                                                                        readonly>
                                                                 <input type="hidden" name="role" value="{{ $user->role }}">
                                                                 <small class="text-muted">
-                                                                    <i class="bi bi-info-circle"></i> Anda Tidak dapat mengubah role anda sendiri
+                                                                    <i class="bi bi-info-circle"></i> Tidak dapat mengubah role ini
                                                                 </small>
                                                             @else
-                                                                {{-- Jika edit user lain, bisa pilih role --}}
+                                                                {{-- Jika edit user lain, bisa pilih admin atau kasir saja --}}
                                                                 <select name="role" 
                                                                         class="form-select @error('role') is-invalid @enderror" 
                                                                         required>
                                                                     <option value="">-- Pilih Role --</option>
-                                                                    @foreach($roles as $role)
-                                                                        <option value="{{ $role }}" {{ $user->role === $role ? 'selected' : '' }}>
-                                                                            {{ ucfirst($role) }}
-                                                                        </option>
-                                                                    @endforeach
+                                                                    <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                                                                    <option value="kasir" {{ $user->role === 'kasir' ? 'selected' : '' }}>Kasir</option>
                                                                 </select>
                                                                 @error('role')
                                                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -262,9 +259,14 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ route('user.store') }}" method="POST">
+                <form action="{{ route('owner.user.store') }}" method="POST">
                     @csrf
                     <div class="modal-body">
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <small>Kamu hanya dapat menambahkan user dengan role <strong>Admin</strong> atau <strong>Kasir</strong></small>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Nama <span class="text-danger">*</span></label>
                             <input type="text" 
@@ -297,15 +299,15 @@
                                     class="form-select @error('role') is-invalid @enderror" 
                                     required>
                                 <option value="">-- Pilih Role --</option>
-                                @foreach($roles as $role)
-                                    <option value="{{ $role }}" {{ old('role') === $role ? 'selected' : '' }}>
-                                        {{ ucfirst($role) }}
-                                    </option>
-                                @endforeach
+                                <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="kasir" {{ old('role') === 'kasir' ? 'selected' : '' }}>Kasir</option>
                             </select>
                             @error('role')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Role Owner tidak dapat ditambahkan
+                            </small>
                         </div>
 
                         <div class="mb-3">

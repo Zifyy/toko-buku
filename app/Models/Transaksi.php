@@ -19,18 +19,31 @@ class Transaksi extends Model
         'tanggal_transaksi',
     ];
 
-    // 🕒 Tambahkan agar Eloquent tahu ini adalah datetime
+    // 🕒 Konversi otomatis ke datetime
     protected $casts = [
         'tanggal_transaksi' => 'datetime',
     ];
 
-    // 🔁 Relasi
+    // 🔁 Relasi utama ke kasir (user yang melakukan transaksi)
     public function kasir()
     {
         return $this->belongsTo(User::class, 'kasir_id');
     }
 
+    // 🔁 Alias relasi untuk kompatibilitas dengan $transaksi->user
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'kasir_id');
+    }
+
+    // 🔁 Relasi ke detail transaksi (DIPERBAIKI: nama method disesuaikan)
     public function detailTransaksi()
+    {
+        return $this->hasMany(TransaksiDetail::class, 'transaksi_id');
+    }
+
+    // 🔁 Alias relasi untuk kompatibilitas (opsional, jika ada kode lain yang pakai)
+    public function transaksiDetail()
     {
         return $this->hasMany(TransaksiDetail::class, 'transaksi_id');
     }

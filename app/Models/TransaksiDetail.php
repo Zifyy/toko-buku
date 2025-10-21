@@ -33,8 +33,7 @@ class TransaksiDetail extends Model
     /**
      * Relasi ke buku
      */
-    public function buku()
-    {
+    public function buku() {
         return $this->belongsTo(Buku::class, 'buku_id');
     }
 

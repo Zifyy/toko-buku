@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'NesMedia - Admin')</title>
+    <title>@yield('title', 'NesMedia - Owner')</title>
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -28,7 +28,7 @@
             top: 0;
             left: 0;
             height: 100vh;
-            width: 240px;
+            width: 260px;
             background: #ffffff;
             border-right: 1px solid #e6e6e6;
             box-shadow: 2px 0 6px rgba(0, 0, 0, 0.05);
@@ -75,7 +75,7 @@
         .toggle-btn {
             position: fixed;
             top: 20px;
-            left: 230px;
+            left: 250px;
             background: #0077b6;
             color: #fff;
             border-radius: 50%;
@@ -116,16 +116,26 @@
             transition: all 0.3s ease;
             white-space: nowrap;
             position: relative;
+            overflow: hidden;
         }
 
         .sidebar a i {
             min-width: 28px;
             text-align: center;
             font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar a span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
         }
 
         .sidebar.collapsed a {
             justify-content: center;
+            padding: 12px 18px;
         }
 
         .sidebar a:hover {
@@ -166,7 +176,7 @@
 
         /* Konten utama */
         .content {
-            margin-left: 240px;
+            margin-left: 260px;
             padding: 30px;
             transition: margin-left 0.3s ease;
         }
@@ -178,12 +188,21 @@
         /* Logout button styling */
         .sidebar form button {
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .sidebar form button:hover {
             background: #dc3545 !important;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .sidebar.collapsed form button {
+            padding: 10px;
+        }
+
+        .sidebar.collapsed form button i {
+            margin: 0;
         }
 
         /* Scrollbar styling */
@@ -569,6 +588,27 @@
         .swal2-hide {
             animation: glassSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards !important;
         }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 120px;
+            }
+            
+            .sidebar .logo h5,
+            .sidebar a span,
+            .sidebar button span {
+                display: none;
+            }
+            
+            .content {
+                margin-left: 120px;
+            }
+            
+            .toggle-btn {
+                left: 110px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -577,61 +617,45 @@
         <!-- Sidebar -->
         <nav id="sidebar" class="sidebar col-md-2 d-none d-md-block">
             <div class="logo">
-                <i class="bi bi-journal-bookmark-fill"></i>
+                <i class="bi bi-bar-chart-line-fill"></i>
                 <h5>NesMedia</h5>
             </div>
             <div class="p-2">
-                <a href="{{ route('admin.dashboard') }}" 
-                   class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" 
+                <a href="{{ route('owner.dashboard') }}" 
+                   class="{{ request()->routeIs('owner.dashboard') ? 'active' : '' }}" 
                    data-bs-toggle="tooltip" 
                    data-bs-placement="right"
                    title="Dashboard">
                     <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
                 </a>
                 
-                <a href="{{ route('buku.index') }}" 
-                   class="{{ request()->routeIs('buku.*') || request()->routeIs('admin.buku.*') ? 'active' : '' }}" 
+                <a href="{{ route('owner.buku') }}" 
+                   class="{{ request()->routeIs('owner.buku') || request()->routeIs('owner.data_buku') ? 'active' : '' }}" 
                    data-bs-toggle="tooltip" 
                    data-bs-placement="right"
                    title="Data Buku">
                     <i class="bi bi-book"></i> <span>Data Buku</span>
                 </a>
                 
-                <a href="{{ route('kategori.index') }}" 
-                   class="{{ request()->routeIs('kategori.*') || request()->routeIs('admin.kategori.*') ? 'active' : '' }}" 
-                   data-bs-toggle="tooltip" 
-                   data-bs-placement="right"
-                   title="Kategori">
-                    <i class="bi bi-tags"></i> <span>Kategori</span>
-                </a>
-                
-                <a href="{{ route('detail-buku.index') }}" 
-                   class="{{ request()->routeIs('detail-buku.*') || request()->routeIs('admin.detail-buku.*') ? 'active' : '' }}" 
-                   data-bs-toggle="tooltip" 
-                   data-bs-placement="right"
-                   title="Detail Buku">
-                    <i class="bi bi-card-list"></i> <span>Detail Buku</span>
-                </a>
-                
-                <a href="{{ route('user.index') }}" 
-                   class="{{ request()->routeIs('user.*') || request()->routeIs('admin.user.*') ? 'active' : '' }}" 
+                <a href="{{ route('owner.user') }}" 
+                   class="{{ request()->routeIs('owner.user*') || request()->routeIs('owner.data_user') ? 'active' : '' }}" 
                    data-bs-toggle="tooltip" 
                    data-bs-placement="right"
                    title="Kelola User">
                     <i class="bi bi-people"></i> <span>Kelola User</span>
                 </a>
                 
-                <a href="{{ route('admin.laporan') }}" 
-                   class="{{ request()->routeIs('admin.laporan') ? 'active' : '' }}" 
+                <a href="{{ route('owner.laporan') }}" 
+                   class="{{ request()->routeIs('owner.laporan*') ? 'active' : '' }}" 
                    data-bs-toggle="tooltip" 
                    data-bs-placement="right"
-                   title="Laporan">
-                    <i class="bi bi-graph-up"></i> <span>Laporan</span>
+                   title="Laporan Keuangan">
+                    <i class="bi bi-graph-up-arrow"></i> <span>Laporan Keuangan</span>
                 </a>
                 
                 <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="mt-3 px-2">
                     @csrf
-                    <button type="button" 
+                    <button type="button"
                             id="logoutBtn"
                             class="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2" 
                             data-bs-toggle="tooltip" 
@@ -643,7 +667,7 @@
             </div>
         </nav>
 
-        <!-- Toggle button floating -->
+        <!-- Toggle Button -->
         <div class="toggle-btn" onclick="toggleSidebar()">
             <i class="bi bi-list"></i>
         </div>
@@ -666,12 +690,12 @@
     function toggleSidebar() {
         sidebar.classList.toggle('collapsed');
         document.body.classList.toggle('sidebar-collapsed');
-        localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+        localStorage.setItem('sidebar-collapsed-owner', sidebar.classList.contains('collapsed'));
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         // Restore sidebar state
-        if (localStorage.getItem('sidebar-collapsed') === 'true') {
+        if (localStorage.getItem('sidebar-collapsed-owner') === 'true') {
             sidebar.classList.add('collapsed');
             document.body.classList.add('sidebar-collapsed');
         }
@@ -700,10 +724,10 @@
                         <i class="bi bi-exclamation-triangle-fill custom-alert-icon"></i>
                     </div>
                     <p style="font-size: 1.1rem; margin-top: 1rem; color: #333; font-weight: 500;">
-                        Apakah Anda yakin ingin keluar dari sistem?
+                        Apakah Anda yakin ingin keluar dari sistem owner?
                     </p>
                     <p style="color: #888; font-size: 0.95rem; margin-top: 0.5rem;">
-                        Anda perlu login kembali untuk mengakses dashboard
+                        Anda perlu login kembali untuk mengakses laporan dan data
                     </p>
                 `,
                 showCancelButton: true,
