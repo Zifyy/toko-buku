@@ -77,6 +77,9 @@ class KasirController extends Controller
 
     /**
      * 💾 Simpan transaksi ke database
+     * 
+     * PERUBAHAN: Sekarang menyimpan snapshot nama_buku agar data tetap ada
+     * meskipun buku dihapus dari database
      */
     public function finalize(Request $request)
     {
@@ -115,9 +118,11 @@ class KasirController extends Controller
                         ->with('error', "Stok buku '{$buku->judul}' tidak cukup.");
                 }
 
+                // ✅ PERBAIKAN: Simpan snapshot nama_buku
                 TransaksiDetail::create([
                     'transaksi_id' => $transaksi->id,
                     'buku_id' => $buku->id,
+                    'nama_buku' => $buku->judul, // 🎯 SNAPSHOT nama buku
                     'jumlah' => $item['quantity'],
                     'harga_satuan' => $item['price'],
                     'subtotal' => $item['price'] * $item['quantity'],

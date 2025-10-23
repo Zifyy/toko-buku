@@ -97,7 +97,8 @@
                 <tbody>
                     @foreach($transaksi->detailTransaksi as $item)
                         <tr>
-                            <td colspan="2">{{ $item->buku->judul ?? '-' }}</td>
+                            {{-- ✅ PERBAIKAN: Gunakan nama_buku dari snapshot, bukan dari relasi --}}
+                            <td colspan="2">{{ $item->nama_buku }}</td>
                         </tr>
                         <tr>
                             <td>{{ $item->jumlah }} x {{ number_format($item->harga_satuan, 0, ',', '.') }}</td>

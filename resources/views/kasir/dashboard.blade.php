@@ -26,6 +26,10 @@
         transform: translateY(-4px);
         box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
+    .book-card.disabled {
+        opacity: 0.6;
+        pointer-events: none;
+    }
 
     .book-card img {
         width: 100%;
@@ -67,6 +71,10 @@
         font-size: 13px;
         line-height: 1.4;
     }
+    .book-meta.out-of-stock {
+        color: #dc3545;
+        font-weight: 600;
+    }
 
     .book-bottom {
         display: grid;
@@ -78,6 +86,9 @@
         color: #0d6efd;
         font-size: 14px;
     }
+    .price.unavailable {
+        color: #6c757d;
+    }
     .add-btn {
         width: 100%;
         height: 40px;
@@ -85,6 +96,12 @@
         align-items: center;
         justify-content: center;
         font-size: 18px;
+    }
+    .add-btn:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.65;
     }
 
     .cart-bubble {
@@ -153,6 +170,22 @@
         justify-content: space-between;
         align-items: center;
     }
+    .cart-header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .select-all-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+    }
+    .select-all-container input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
     .floating-cart-body {
         flex: 1;
         overflow-y: auto;
@@ -169,6 +202,23 @@
         border-bottom: 1px solid #eee;
         padding-bottom: 8px;
     }
+    .cart-item-checkbox {
+        display: flex;
+        align-items: center;
+    }
+    .cart-item-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    .cart-item-title {
+        flex: 1;
+    }
+    .cart-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
     .cart-item-controls button {
         width: 25px;
         height: 25px;
@@ -176,10 +226,59 @@
         border-radius: 5px;
         background: #0d6efd;
         color: #fff;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .cart-item-controls button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    .cart-item-controls .qty-display {
+        min-width: 30px;
+        text-align: center;
+        font-weight: 600;
+    }
+    .btn-delete-item {
+        background: #dc3545;
+        width: 25px;
+        height: 25px;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-delete-selected {
+        background: #dc3545;
+        border: none;
+        color: #fff;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .btn-delete-selected:disabled {
+        background: #ccc;
+        cursor: not-allowed;
     }
     .cart-footer {
         padding: 15px;
         border-top: 1px solid #eee;
+    }
+    .stock-warning {
+        color: #dc3545;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+    .empty-cart-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
     }
 </style>
 
@@ -195,7 +294,12 @@
 
     <div class="books-grid">
         @foreach($buku as $item)
-        <div class="book-card">
+        @php
+            $stok = optional($item->detailBuku)->stok ?? 0;
+            $harga = optional($item->detailBuku)->harga ?? 0;
+            $isAvailable = $stok > 0 && $harga > 0;
+        @endphp
+        <div class="book-card {{ !$isAvailable ? 'disabled' : '' }}">
             <img src="{{ $item->cover ? asset('cover/'.$item->cover) : asset('images/no-cover.png') }}" alt="{{ $item->judul }}">
             <div class="book-info">
                 <h6 class="book-title">{{ $item->judul }}</h6>
@@ -205,15 +309,29 @@
                     <p class="book-meta"><strong>Kategori:</strong> {{ $item->kategori->nama_kategori ?? '-' }}</p>
                     <p class="book-meta"><strong>Penerbit:</strong> {{ $item->penerbit ?? '-' }}</p>
                     <p class="book-meta"><strong>Pengarang:</strong> {{ $item->pengarang }}</p>
-                    <p class="book-meta"><strong>Stok:</strong> {{ optional($item->detailBuku)->stok ?? 0 }}</p>
+                    <p class="book-meta {{ $stok <= 0 ? 'out-of-stock' : '' }}">
+                        <strong>Stok:</strong> {{ $stok }}
+                        @if($stok <= 0)
+                            <span style="color: #dc3545;">(Habis)</span>
+                        @endif
+                    </p>
                 </div>
 
                 <div class="book-bottom">
-                    <span class="price">Rp{{ number_format(optional($item->detailBuku)->harga ?? 0,0,',','.') }}</span>
+                    <span class="price {{ !$isAvailable ? 'unavailable' : '' }}">
+                        @if($harga > 0)
+                            Rp{{ number_format($harga, 0, ',', '.') }}
+                        @else
+                            <span style="color: #dc3545;">Harga belum tersedia</span>
+                        @endif
+                    </span>
                     <button
                         class="btn btn-primary add-btn"
-                        data-bs-toggle="tooltip" data-bs-placement="top" title="Tambah ke Keranjang"
-                        onclick="addToCart('{{ $item->id }}', '{{ addslashes($item->judul) }}', {{ optional($item->detailBuku)->harga ?? 0 }})">
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top" 
+                        title="{{ !$isAvailable ? 'Stok habis atau harga belum tersedia' : 'Tambah ke Keranjang' }}"
+                        onclick="addToCart('{{ $item->id }}', '{{ addslashes($item->judul) }}', {{ $harga }}, {{ $stok }})"
+                        {{ !$isAvailable ? 'disabled' : '' }}>
                         <i class="bi bi-cart-plus"></i>
                     </button>
                 </div>
@@ -234,18 +352,31 @@
 
 <div id="floatingCart" class="floating-cart" aria-live="polite">
     <div class="floating-cart-header">
-        <h6 class="m-0">🛍️ Keranjang</h6>
-        <button class="btn btn-sm btn-light" onclick="toggleCart()">✕</button>
+        <h6 class="m-0">🛒 Keranjang</h6>
+        <div class="cart-header-actions">
+            <div class="select-all-container">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                <label for="selectAllCheckbox" style="margin: 0; cursor: pointer;">Pilih Semua</label>
+            </div>
+            <button class="btn-delete-selected" id="deleteSelectedBtn" onclick="deleteSelected()" disabled>
+                🗑️ Hapus
+            </button>
+            <button class="btn btn-sm btn-light" onclick="toggleCart()">✕</button>
+        </div>
     </div>
-    <div class="floating-cart-body" id="cartItems"></div>
+    <div class="floating-cart-body" id="cartItems">
+        <div class="empty-cart-message">
+            <i class="bi bi-cart-x" style="font-size: 48px; color: #ccc;"></i>
+            <p style="margin-top: 10px;">Keranjang masih kosong</p>
+        </div>
+    </div>
     <div class="cart-footer">
         <h6 class="mb-2">Total: <span id="cartTotal">Rp0</span></h6>
 
-        <!-- ✅ FIXED: arahkan ke route yang benar -->
         <form id="cartForm" action="{{ route('kasir.transaksi.store') }}" method="POST">
             @csrf
             <input type="hidden" name="cart_data" id="cartDataInput">
-            <button type="submit" class="btn btn-success w-100">Konfirmasi Pesanan</button>
+            <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled>Konfirmasi Pesanan</button>
         </form>
     </div>
 </div>
@@ -258,6 +389,7 @@
 
     let cart = {};
     let cartCount = 0;
+    let selectedItems = new Set();
 
     document.addEventListener('DOMContentLoaded', function () {
         const savedCart = localStorage.getItem('kasir_cart');
@@ -267,9 +399,14 @@
         }
 
         document.getElementById('cartForm').addEventListener('submit', function(e) {
-            // Ubah object cart menjadi array of object dengan id bertipe integer
+            if (Object.keys(cart).length === 0) {
+                e.preventDefault();
+                alert('Keranjang masih kosong!');
+                return;
+            }
+
             const cartArr = Object.entries(cart).map(([id, item]) => ({
-                id: parseInt(id), // pastikan integer
+                id: parseInt(id),
                 title: item.title,
                 price: item.price,
                 quantity: item.quantity
@@ -281,29 +418,52 @@
     function updateCart() {
         const cartContainer = document.getElementById('cartItems');
         const cartCountEl = document.getElementById('cartCount');
+        const confirmBtn = document.getElementById('confirmOrderBtn');
         let total = 0;
         let count = 0;
 
         cartContainer.innerHTML = '';
-        for (let id in cart) {
-            const item = cart[id];
-            const itemTotal = item.price * item.quantity;
-            total += itemTotal;
-            count += item.quantity;
-
-            cartContainer.innerHTML += `
-                <div class="cart-item">
-                    <div class="cart-item-title">
-                        ${item.title}<br>
-                        <small>Rp${(item.price).toLocaleString()}</small>
-                    </div>
-                    <div class="cart-item-controls">
-                        <button onclick="changeQty('${id}', -1)">-</button>
-                        <span>${item.quantity}</span>
-                        <button onclick="changeQty('${id}', 1)">+</button>
-                    </div>
+        
+        if (Object.keys(cart).length === 0) {
+            cartContainer.innerHTML = `
+                <div class="empty-cart-message">
+                    <i class="bi bi-cart-x" style="font-size: 48px; color: #ccc;"></i>
+                    <p style="margin-top: 10px;">Keranjang masih kosong</p>
                 </div>
             `;
+            confirmBtn.disabled = true;
+        } else {
+            for (let id in cart) {
+                const item = cart[id];
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                count += item.quantity;
+
+                const isMaxStock = item.quantity >= item.maxStock;
+                const stockWarning = isMaxStock ? `<div class="stock-warning">Stok maksimal: ${item.maxStock}</div>` : '';
+
+                cartContainer.innerHTML += `
+                    <div class="cart-item">
+                        <div class="cart-item-checkbox">
+                            <input type="checkbox" class="item-checkbox" data-id="${id}" onchange="updateSelectedItems()">
+                        </div>
+                        <div class="cart-item-title">
+                            ${item.title}<br>
+                            <small>Rp${(item.price).toLocaleString()} × ${item.quantity}</small>
+                            ${stockWarning}
+                        </div>
+                        <div class="cart-item-controls">
+                            <button onclick="changeQty('${id}', -1)">−</button>
+                            <span class="qty-display">${item.quantity}</span>
+                            <button onclick="changeQty('${id}', 1)" ${isMaxStock ? 'disabled' : ''}>+</button>
+                            <button class="btn-delete-item" onclick="deleteItem('${id}')" title="Hapus item">
+                                <i class="bi bi-trash" style="font-size: 12px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            confirmBtn.disabled = false;
         }
 
         cartCount = count;
@@ -313,6 +473,9 @@
 
         document.getElementById('cartDataInput').value = JSON.stringify(cart);
         localStorage.setItem('kasir_cart', JSON.stringify(cart));
+
+        updateSelectAllCheckbox();
+        updateDeleteButton();
     }
 
     function toggleCart() {
@@ -322,22 +485,136 @@
         bubble.classList.toggle('hidden');
     }
 
-    function addToCart(id, title, price) {
+    function addToCart(id, title, price, maxStock) {
+        if (maxStock <= 0) {
+            alert('Stok buku habis!');
+            return;
+        }
+
+        if (price <= 0) {
+            alert('Harga buku belum tersedia!');
+            return;
+        }
+
         if (!cart[id]) {
-        cart[id] = { id: id, title: title, price: Number(price) || 0, quantity: 1 };
-    } else {
-        cart[id].quantity++;
-    }
-    updateCart();
-    animateBadge();
+            cart[id] = { 
+                id: id, 
+                title: title, 
+                price: Number(price) || 0, 
+                quantity: 1,
+                maxStock: Number(maxStock) || 0
+            };
+        } else {
+            if (cart[id].quantity >= maxStock) {
+                alert(`Stok buku hanya tersedia ${maxStock} item!`);
+                return;
+            }
+            cart[id].quantity++;
+        }
+        updateCart();
+        animateBadge();
     }
 
     function changeQty(id, delta) {
         if (!cart[id]) return;
-        cart[id].quantity += delta;
-        if (cart[id].quantity <= 0) delete cart[id];
+
+        const newQty = cart[id].quantity + delta;
+
+        if (newQty > cart[id].maxStock) {
+            alert(`Stok maksimal hanya ${cart[id].maxStock} item!`);
+            return;
+        }
+
+        if (newQty <= 0) {
+            if (confirm('Hapus item ini dari keranjang?')) {
+                delete cart[id];
+                selectedItems.delete(id);
+            }
+        } else {
+            cart[id].quantity = newQty;
+        }
+
         updateCart();
         animateBadge();
+    }
+
+    function deleteItem(id) {
+        if (confirm('Hapus item ini dari keranjang?')) {
+            delete cart[id];
+            selectedItems.delete(id);
+            updateCart();
+        }
+    }
+
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+
+        if (selectAllCheckbox.checked) {
+            checkboxes.forEach(cb => {
+                cb.checked = true;
+                selectedItems.add(cb.dataset.id);
+            });
+        } else {
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            selectedItems.clear();
+        }
+
+        updateDeleteButton();
+    }
+
+    function updateSelectedItems() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        selectedItems.clear();
+
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                selectedItems.add(cb.dataset.id);
+            }
+        });
+
+        updateSelectAllCheckbox();
+        updateDeleteButton();
+    }
+
+    function updateSelectAllCheckbox() {
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const totalItems = checkboxes.length;
+        const checkedItems = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+        if (totalItems === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedItems === totalItems) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else if (checkedItems > 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        }
+    }
+
+    function updateDeleteButton() {
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        deleteBtn.disabled = selectedItems.size === 0;
+    }
+
+    function deleteSelected() {
+        if (selectedItems.size === 0) return;
+
+        if (confirm(`Hapus ${selectedItems.size} item yang dipilih dari keranjang?`)) {
+            selectedItems.forEach(id => {
+                delete cart[id];
+            });
+            selectedItems.clear();
+            updateCart();
+        }
     }
 
     function animateBadge() {

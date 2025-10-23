@@ -504,7 +504,7 @@
                 <i class="bi bi-journal-bookmark-fill"></i>
             </div>
             <div class="brand-title">NesMedia</div>
-            <div class="subtitle">Silakan login untuk melanjutkan</div>
+            <div class="subtitle">Silahkan login untuk melanjutkan</div>
 
             <!-- Alert Error -->
             @if ($errors->any())
