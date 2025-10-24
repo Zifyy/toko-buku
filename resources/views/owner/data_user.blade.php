@@ -67,7 +67,7 @@
                                     <td>
                                         <strong>{{ $user->name }}</strong>
                                         @if($user->id === auth()->id())
-                                            <span class="badge bg-info text-white ms-1">You</span>
+                                            <span class="badge bg-info text-white ms-1">Anda</span>
                                         @endif
                                     </td>
                                     <td>{{ $user->email }}</td>

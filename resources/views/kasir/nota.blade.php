@@ -54,6 +54,33 @@
         margin-top: 5px;
     }
 
+    .payment-section {
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .payment-section p {
+        margin: 4px 0;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .payment-section .label {
+        font-weight: normal;
+    }
+
+    .payment-section .value {
+        font-weight: bold;
+        text-align: right;
+    }
+
+    .kembalian-highlight {
+        background: #f8f9fa;
+        padding: 6px;
+        border-radius: 4px;
+        margin-top: 4px;
+    }
+
     .struk-footer {
         text-align: center;
         margin-top: 15px;
@@ -97,12 +124,11 @@
                 <tbody>
                     @foreach($transaksi->detailTransaksi as $item)
                         <tr>
-                            {{-- ✅ PERBAIKAN: Gunakan nama_buku dari snapshot, bukan dari relasi --}}
                             <td colspan="2">{{ $item->nama_buku }}</td>
                         </tr>
                         <tr>
-                            <td>{{ $item->jumlah }} x {{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($item->subtotal_setelah_diskon ?? $item->subtotal, 0, ',', '.') }}</td>
+                            <td>{{ $item->jumlah }} x Rp{{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
+                            <td>Rp{{ number_format($item->subtotal_setelah_diskon ?? $item->subtotal, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -111,12 +137,26 @@
 
         <div class="struk-divider"></div>
 
-        <p class="struk-total">TOTAL : Rp {{ number_format($transaksi->total, 0, ',', '.') }}</p>
+        <p class="struk-total">TOTAL : Rp{{ number_format($transaksi->total, 0, ',', '.') }}</p>
+
+        <div class="struk-divider"></div>
+
+        <!-- Payment Information -->
+        <div class="payment-section">
+            <p>
+                <span class="label">Jumlah Bayar:</span>
+                <span class="value">Rp{{ number_format($transaksi->jumlah_bayar ?? 0, 0, ',', '.') }}</span>
+            </p>
+            <p class="kembalian-highlight">
+                <span class="label">Kembalian:</span>
+                <span class="value">Rp{{ number_format($transaksi->kembalian ?? 0, 0, ',', '.') }}</span>
+            </p>
+        </div>
 
         <div class="struk-divider"></div>
 
         <div class="struk-footer">
-            <p>Terima kasih telah berbelanja di Toko Buku</p>
+            <p>Terima kasih telah berbelanja di</p>
             <p><strong>NesMedia</strong></p>
             <p>Semoga hari Anda menyenangkan!</p>
         </div>

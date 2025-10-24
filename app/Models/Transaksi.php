@@ -17,6 +17,8 @@ class Transaksi extends Model
         'kasir_id',
         'total',
         'tanggal_transaksi',
+        'jumlah_bayar',    // ✅ TAMBAHKAN INI
+        'kembalian',       // ✅ TAMBAHKAN INI
     ];
 
     // 🕒 Konversi otomatis ke datetime
